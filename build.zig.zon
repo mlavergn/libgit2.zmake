@@ -1,0 +1,34 @@
+.{
+    .name = .libgit2,
+    .description = "libgit2 as a Zig module",
+    .version = "1.9.7",
+    .fingerprint = 0xca636d33a4f658cd,
+    .minimum_zig_version = "0.17.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "build",
+        "src",
+        "cli",
+        "zig",
+        "README.md",
+    },
+    .dependencies = .{
+        .zigbuildx = .{
+            .url = "git+https://github.com/mlavergn/zigbuildx?ref=v6.0.0#46768094ba0c15caf794a3a7e8bfdde5441c38bf",
+            .hash = "zigbuildx-6.0.0-9koPhBcPBQD2jCWWdnTk-0rvM1jNFv1UBCqc4kuseiEG",
+        },
+        .libgit2 = .{
+            .url = "https://github.com/libgit2/libgit2/archive/refs/tags/v1.9.7.tar.gz",
+            .hash = "N-V-__8AAPE7NgGzXiYp17A2YYEYpVRbRzgNqovmU-BWmr8z",
+        },
+        .libssh2 = .{
+            .url = "https://github.com/libssh2/libssh2/releases/download/libssh2-1.11.1/libssh2-1.11.1.tar.gz",
+            .hash = "N-V-__8AAOj5TwB7cbD38OzT3MDLCVnrddaX80kE_mWyrfXf",
+        },
+        .mbedtls = .{
+            .url = "https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/mbedtls-3.6.7.tar.gz",
+            .hash = "N-V-__8AALrvlQKVtYlvv9dpBnbrJfdwR_F0wAgwsvZhAF1Y",
+        },
+    },
+}

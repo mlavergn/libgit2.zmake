@@ -1,0 +1,9 @@
+# ---> Zig
+.zig-cache/
+zig-out/
+.gitmodule
+.claude
+zig-pkg/
+
+# Backups zsecrets import and the signing.zon cleanup leave until checked
+*.bak
