@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_git_error);
+const log = std.log.scoped(.libgit2_git_error);
 const mod = @import("module.zig");
 
 /// Every `git_error_code` (`include/git2/errors.h`) a caller can act on,

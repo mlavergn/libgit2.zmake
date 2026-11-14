@@ -8,7 +8,7 @@
 //! Usage: `clar_generate -o <output dir> [-f] [-x <prefix>]... <test dir>`
 
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_clar_generate);
+const log = std.log.scoped(.libgit2_clar_generate);
 
 /// One test, initializer or cleanup function found in a module.
 const Callback = struct {
@@ -66,6 +66,7 @@ pub const ClarGenerate = struct {
     /// - `io`: the I/O implementation used to read the test sources.
     /// - Returns: the generator; call `deinit` to free it.
     pub fn init(allocator: std.mem.Allocator, io: std.Io) !Self {
+        log.debug("{s}:{d} :: {s}", .{ @src().file, @src().line, @src().fn_name });
         return Self{ .arena = std.heap.ArenaAllocator.init(allocator), .io = io };
     }
 
@@ -208,8 +209,8 @@ pub const ClarGenerate = struct {
     /// - Returns: true when the module defines at least one test; propagates
     ///   allocation failure.
     fn parse(self: *Self, module: *Module, contents: []const u8) !bool {
-        const text = try skipComments(self.allocator, contents);
-        const prefix = try std.fmt.allocPrint(self.allocator, "test_{s}__", .{module.name});
+        const text = try self.skipComments(contents);
+        const prefix = try self.allocator.print("test_{s}__", .{module.name});
 
         var callbacks: std.ArrayList(Callback) = .empty;
         var initializers: std.ArrayList(Callback) = .empty;
@@ -243,7 +244,7 @@ pub const ClarGenerate = struct {
     /// - Returns: e.g. `refs_branches_create`; propagates allocation failure.
     fn moduleName(self: *Self, path: []const u8) ![]const u8 {
         const stem = path[0 .. path.len - ".c".len];
-        const joined = try std.mem.replaceOwned(u8, self.allocator, stem, std.fs.path.sep_str, "_");
+        const joined = try std.mem.replaceOwned(u8, self.allocator, stem, std.Io.Dir.path.sep_str, "_");
         return std.mem.replaceOwned(u8, self.allocator, joined, "-", "_");
     }
 
@@ -272,7 +273,7 @@ pub const ClarGenerate = struct {
         if (initializer) |init_cb| {
             if (std.mem.startsWith(u8, init_cb.short_name, "initialize_")) {
                 const variant = try std.mem.replaceOwned(u8, self.allocator, init_cb.short_name["initialize_".len..], "_", " ");
-                name = try std.fmt.allocPrint(self.allocator, "{s} ({s})", .{ clean, variant });
+                name = try self.allocator.print("{s} ({s})", .{ clean, variant });
             }
         }
 
@@ -368,10 +369,10 @@ pub const ClarGenerate = struct {
     /// Removes `//` and `/* */` comments, keeping string and character
     /// literals intact, as `Module._skip_comments` does.
     ///
-    /// - `allocator`: allocator for the result.
+    /// - `self`: the generator, whose arena holds the result.
     /// - `text`: the source.
     /// - Returns: the source without comments; propagates allocation failure.
-    fn skipComments(allocator: std.mem.Allocator, text: []const u8) ![]const u8 {
+    fn skipComments(self: *Self, text: []const u8) ![]const u8 {
         var out: std.ArrayList(u8) = .empty;
         var i: usize = 0;
         while (i < text.len) {
@@ -389,15 +390,15 @@ pub const ClarGenerate = struct {
             }
             if (text[i] == '"' or text[i] == '\'') {
                 if (literalEnd(text, i)) |end| {
-                    try out.appendSlice(allocator, text[i..end]);
+                    try out.appendSlice(self.allocator, text[i..end]);
                     i = end;
                     continue;
                 }
             }
-            try out.append(allocator, text[i]);
+            try out.append(self.allocator, text[i]);
             i += 1;
         }
-        return out.toOwnedSlice(allocator);
+        return out.toOwnedSlice(self.allocator);
     }
 
     /// Finds the end of a string or character literal starting at `start`.
@@ -498,9 +499,11 @@ pub fn main(init: std.process.Init) !void {
 // Unit Tests
 
 test "comments are stripped but literals kept" {
-    const allocator = std.testing.allocator;
-    const out = try ClarGenerate.skipComments(allocator, "a // x\nb /* y */ c \"// z\" '/*'");
-    defer allocator.free(out);
+    var generator = try ClarGenerate.init(std.testing.allocator, std.testing.io);
+    defer generator.deinit();
+    generator.allocator = generator.arena.allocator();
+
+    const out = try generator.skipComments("a // x\nb /* y */ c \"// z\" '/*'");
     try std.testing.expectEqualStrings("a \nb  c \"// z\" '/*'", out);
 }
 

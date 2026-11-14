@@ -4,11 +4,11 @@
 
 ## Overview
 
-The libgit2 C sources are built exactly as upstream releases them: `build.zig` takes the place of CMake, and nothing upstream is patched. HTTPS uses Zig's standard library, and SSH uses libssh2 with mbedTLS, also built with Zig, so the build needs no system libraries. Use it as a Zig package (the `ziglibgit2` module, or one static archive), or as the `git2` command line. libgit2's own test suites check the result.
+The libgit2 C sources are built exactly as upstream releases them: `build.zig` takes the place of CMake, and nothing upstream is patched. HTTPS uses Zig's standard library, and SSH uses libssh2 with mbedTLS, also built with Zig, so the build needs no system libraries. Use it as a Zig package (the `libgit2` module, or one static archive, `liblibgit2.a`), or as the `git2` command line. libgit2's own test suites check the result.
 
 ## Requirements
 
-- Zig 0.17.0
+- Zig 0.17.1
 - Target platforms: macOS (Apple Silicon), Linux (ARM / x86_64), Windows (x86_64)
 - macOS: the Xcode SDK. Nothing else: no CMake, Python, or OpenSSL.
 
@@ -41,7 +41,7 @@ zig-out/bin/git2 clone https://github.com/libgit2/TestGitRepository demo
 From Zig:
 
 ```zig
-const mod = @import("ziglibgit2");
+const mod = @import("libgit2");
 
 var lib = try mod.Libgit2.init(allocator, io);
 defer lib.deinit();

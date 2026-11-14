@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_tls_stream);
+const log = std.log.scoped(.libgit2_tls_stream);
 const mod = @import("module.zig");
 
 /// `git_stream`'s two bitfields, which share one `unsigned int`, in
@@ -83,6 +83,8 @@ const TlsStreamShared = struct {
 pub const TlsStream = struct {
     const Self = @This();
 
+    /// The allocator, I/O and trust store every stream uses; valid while
+    /// `refs` is above zero.
     var shared: TlsStreamShared = undefined;
     /// Live registrations.
     var users: std.atomic.Value(usize) = .init(0);
@@ -93,6 +95,8 @@ pub const TlsStream = struct {
     /// The certificate handed to `certificate_check` callbacks.
     var no_certificate: mod.c.git_cert = .{ .cert_type = mod.c.GIT_CERT_NONE };
 
+    /// What `register` hands to `git_stream_register`; libgit2 keeps the
+    /// pointer, so it lives as long as the process.
     var registration: mod.c.git_stream_registration = .{
         .version = mod.c.GIT_STREAM_VERSION,
         .init = create,
@@ -181,6 +185,12 @@ pub const TlsStream = struct {
         return 0;
     }
 
+    /// Allocates an unconnected stream from `shared` and takes a reference
+    /// on it, so the trust store outlives the stream.
+    ///
+    /// - `host`: the host to connect to.
+    /// - `port`: the port, as a number or service name.
+    /// - Returns: the stream; propagates port-parse and allocation failures.
     fn createStream(host: []const u8, port: []const u8) !*Self {
         const allocator = shared.allocator;
         // Before any allocation, so a bad port leaks nothing.
@@ -232,6 +242,13 @@ pub const TlsStream = struct {
         return 0;
     }
 
+    /// Connects the socket and runs the handshake, leaving the stream
+    /// `connected` only when both succeed.
+    ///
+    /// - `self`: the stream.
+    /// - Returns: nothing; propagates trust-store, connect and handshake
+    ///   failures, with the socket's own error in place of `ReadFailed` or
+    ///   `WriteFailed`.
     fn open(self: *Self) !void {
         try loadTrustStore();
 
@@ -362,6 +379,12 @@ pub const TlsStream = struct {
         return @intCast(len);
     }
 
+    /// Encrypts `bytes` and flushes them through to the socket, since
+    /// libgit2 expects a write to be on the wire when it returns.
+    ///
+    /// - `self`: the stream.
+    /// - `bytes`: the plaintext.
+    /// - Returns: nothing; the socket's error on failure.
     fn send(self: *Self, bytes: []const u8) !void {
         self.client.writer.writeAll(bytes) catch return self.writeError();
         self.client.writer.flush() catch return self.writeError();
@@ -449,7 +472,7 @@ pub const TlsStream = struct {
     /// - Returns: `GIT_ERROR`, for the callback to return.
     fn fail(class: c_int, comptime fmt: []const u8, args: anytype) c_int {
         var buffer: [512]u8 = undefined;
-        const message = std.fmt.bufPrintSentinel(&buffer, fmt, args, 0) catch "TLS stream error (message truncated)";
+        const message = std.mem.printSentinel(&buffer, fmt, args, 0) catch "TLS stream error (message truncated)";
         log.debug("{s}", .{message});
         _ = mod.c.git_error_set_str(class, message.ptr);
         return mod.c.GIT_ERROR;
@@ -532,7 +555,7 @@ test "a failed handshake can still be closed and freed" {
     defer thread.join();
 
     var port_buffer: [8]u8 = undefined;
-    const port = try std.fmt.bufPrintSentinel(&port_buffer, "{d}", .{server.socket.address.getPort()}, 0);
+    const port = try std.mem.printSentinel(&port_buffer, "{d}", .{server.socket.address.getPort()}, 0);
     var out: ?*mod.c.git_stream = null;
     try std.testing.expectEqual(0, TlsStream.create(&out, "127.0.0.1", port));
     const parent: *GitStreamAbi = @ptrCast(@alignCast(out.?));
@@ -572,7 +595,7 @@ test "a silent server times out" {
     defer thread.join();
 
     var port_buffer: [8]u8 = undefined;
-    const port = try std.fmt.bufPrintSentinel(&port_buffer, "{d}", .{server.socket.address.getPort()}, 0);
+    const port = try std.mem.printSentinel(&port_buffer, "{d}", .{server.socket.address.getPort()}, 0);
     var out: ?*mod.c.git_stream = null;
     try std.testing.expectEqual(0, TlsStream.create(&out, "127.0.0.1", port));
     const parent: *GitStreamAbi = @ptrCast(@alignCast(out.?));

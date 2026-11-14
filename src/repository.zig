@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_repository);
+const log = std.log.scoped(.libgit2_repository);
 const mod = @import("module.zig");
 
 /// A git repository: opened, created, or cloned.
@@ -158,7 +158,7 @@ test "repository clones a local repository" {
     defer fixture.deinit();
     const first = try fixture.commitFile("README", "hello\n", "Initial commit");
 
-    const target = try std.fs.path.join(allocator, &.{ fixture.path, "..", "clone" });
+    const target = try std.Io.Dir.path.join(allocator, &.{ fixture.path, "..", "clone" });
     defer allocator.free(target);
 
     var cloned = try Repository.clone(allocator, fixture.path, target, null);

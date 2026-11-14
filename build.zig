@@ -1,4 +1,5 @@
 const std = @import("std");
+const log = std.log.scoped(.libgit2_build);
 const builtin = @import("builtin");
 
 const zon = @import("build.zig.zon");
@@ -73,6 +74,8 @@ pub fn build(b: *std.Build) !void {
     // Upstream C
 
     const c_cfg = try upstream.Config.init(b, cfg.target, cfg.optimize);
+    // Traced only now: `-Dverbose-build` is read by `upstream.Config.init`.
+    if (c_cfg.verbose) log.debug("{s}:{d} :: {s}", .{ @src().file, @src().line, @src().fn_name });
     const libgit2 = try upstream.LibGit2.init(&c_cfg);
     const libgit2_c = libgit2.module;
 

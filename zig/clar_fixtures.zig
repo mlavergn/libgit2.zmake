@@ -13,7 +13,7 @@
 //! keys the destination by package hash, so a new pin gets a fresh copy.
 
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_clar_fixtures);
+const log = std.log.scoped(.libgit2_clar_fixtures);
 const builtin = @import("builtin");
 
 /// Copies a fixture tree and restores its executable bits.
@@ -41,6 +41,7 @@ pub const ClarFixtures = struct {
     /// - `io`: the I/O implementation used for every file operation.
     /// - Returns: the copier.
     pub fn init(allocator: std.mem.Allocator, io: std.Io) !Self {
+        log.debug("{s}:{d} :: {s}", .{ @src().file, @src().line, @src().fn_name });
         return Self{ .allocator = allocator, .io = io };
     }
 
@@ -97,7 +98,7 @@ pub const ClarFixtures = struct {
         var walker = try src.walk(self.allocator);
         defer walker.deinit();
 
-        var link_buffer: [std.fs.max_path_bytes]u8 = undefined;
+        var link_buffer: [std.Io.Dir.max_path_bytes]u8 = undefined;
         while (try walker.next(self.io)) |entry| {
             switch (entry.kind) {
                 .directory => try dest.createDirPath(self.io, entry.path),
@@ -143,9 +144,9 @@ test "fixtures are copied once, with their executable bits" {
 
     const root = try tmp.dir.realPathFileAlloc(io, ".", allocator);
     defer allocator.free(root);
-    const src = try std.fs.path.join(allocator, &.{ root, "src" });
+    const src = try std.Io.Dir.path.join(allocator, &.{ root, "src" });
     defer allocator.free(src);
-    const dest = try std.fs.path.join(allocator, &.{ root, "dest" });
+    const dest = try std.Io.Dir.path.join(allocator, &.{ root, "dest" });
     defer allocator.free(dest);
 
     var fixtures = try ClarFixtures.init(allocator, io);

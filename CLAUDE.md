@@ -8,7 +8,7 @@ Builds libgit2 with only the Zig toolchain (no CMake), and exposes it through an
 
 Success means libgit2's own clar suites pass against the Zig-built library (`zig build clar`). They run only on macOS; Linux and Windows are checked by cross-compiling.
 
-Zig **0.17.0**. On macOS the build needs the Xcode SDK (resolved via `zigbuildx.Xcode`). Targets: Darwin, Linux, Windows; `build/libgit2.zig` fails configuration with `UnsupportedTargetOs` for anything else rather than guess its settings.
+Zig **0.17.1** (`minimum_zig_version` in `build.zig.zon`). On macOS the build needs the Xcode SDK (resolved via `zigbuildx.Xcode`). Targets: Darwin, Linux, Windows; `build/libgit2.zig` fails configuration with `UnsupportedTargetOs` for anything else rather than guess its settings.
 
 ## Build / Test
 
@@ -46,7 +46,7 @@ zig build -Dverbose-build    # trace the build/ description as it runs
 
 Consequences of these choices, all intended:
 - `git_libgit2_features()` doesn't report HTTPS, though it works: `GIT_HTTPS` stays undefined.
-- HTTPS exists only after `mod.Libgit2.init` registers the TLS stream. C code that links `libziglibgit2.a` and calls `git_libgit2_init` itself gets none (`cli/main.zig` registers the stream for `git2`).
+- HTTPS exists only after `mod.Libgit2.init` registers the TLS stream. C code that links `liblibgit2.a` and calls `git_libgit2_init` itself gets none (`cli/main.zig` registers the stream for `git2`).
 - `certificate_check` callbacks receive `GIT_CERT_NONE`. `std` doesn't expose the peer's X.509, and an untrusted certificate fails the handshake before the callback runs. Trust comes from the OS root store only.
 - Zig's TLS offers fewer cipher suites than OpenSSL or SecureTransport. Servers limited to TLS 1.2 with CBC ciphers won't connect.
 - SSH runs one thread at a time. libssh2's mbedTLS backend shares one random-number generator, and the default mbedTLS config has no `MBEDTLS_THREADING_C`, as with CMake.
@@ -58,14 +58,14 @@ Consequences of these choices, all intended:
 ZIGSTYLE is authoritative. When code conflicts with it, change the code. Key points:
 - Use one primary struct per file, named for its role in snake_case. Every multi-file directory has a `module.zig` barrel (`src/`, `build/`, `zig/`), and siblings import through it.
 - Never nest types. Put supporting types above the primary struct, and export public ones through the barrel (`GitErrorSet`, `RevwalkSort`, `StatusEntry`, `PassphraseFn`). The only alias is `const Self = @This();`.
-- Every file, `build/` included, declares a scoped logger: `.ziglibgit2_<file>`, or `.ziglibgit2_build_<file>` in `build/`. Its main functions trace entry with `@src()`. Barrels are exempt, and so are per-read and per-write paths, where a trace would cost on every packet.
-- `init` returns `!Self`, even when nothing can fail.
+- Every file, `build/` included, declares a scoped logger: `.libgit2_<file>`, or `.libgit2_build_<file>` in `build/`. Its main functions trace entry with `@src()`. Barrels are exempt, and so are per-read and per-write paths, where a trace would cost on every packet.
+- `init` returns `!Self`, even when nothing can fail. Plain values with nothing to release, like `Oid`, have no `init`. They are built through `from*` conversions (`fromRaw`, `fromHex`), so accessors returning them stay infallible.
 - Give every public declaration a `///` comment, struct fields and barrel exports included.
 - Write doc comments as ZIGSTYLE E.1.b says: one ``- `name`:`` bullet per parameter, then `- Returns:`, on private functions too wherever they have a `///` comment. Explain *why*.
 - Never alias namespaces (`const c = mod.c;` is a violation); use `mod.c.*`.
 - In `build/`, cite the upstream CMake line every flag, define, or source list comes from, and check that the line number is right.
 - `build/` entry traces go behind `if (cfg.verbose)`. The build script re-runs whenever the configured graph goes stale, in dependent packages too, so ungated traces print each time.
-- Never use deprecated Zig APIs. `@cImport` is gone; the C API comes from `b.addTranslateC`.
+- Never use deprecated Zig APIs. `@cImport` is gone; the C API comes from `b.addTranslateC`. Most std deprecations exist only as doc comments, which the compiler never warns about, so check the declaration. `std.fs.path` is now `std.Io.Dir.path`, `std.fmt.allocPrint*` is `Allocator.print*`, `std.fmt.bufPrint*` is `std.mem.print*`, and `Run.add*DirectoryArg` is `add*DirectoryArg2`.
 
 ## Project-state heads-ups
 

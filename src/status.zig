@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_status);
+const log = std.log.scoped(.libgit2_status);
 const mod = @import("module.zig");
 
 /// One changed path in a `Status` list.

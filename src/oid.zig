@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_oid);
+const log = std.log.scoped(.libgit2_oid);
 const mod = @import("module.zig");
 
 /// A git object id: a SHA-1 hash, held by value.
@@ -14,9 +14,13 @@ pub const Oid = struct {
 
     /// Wraps an id libgit2 returned.
     ///
+    /// A conversion rather than an `init`: an id is a plain value with
+    /// nothing to release, and its accessors (`Commit.id`, `Reference.target`)
+    /// cannot fail.
+    ///
     /// - `raw`: the id, copied.
     /// - Returns: the id.
-    pub fn init(raw: *const mod.c.git_oid) Self {
+    pub fn fromRaw(raw: *const mod.c.git_oid) Self {
         return Self{ .raw = raw.* };
     }
 

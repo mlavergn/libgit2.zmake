@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_build_config);
+const log = std.log.scoped(.libgit2_build_config);
 
 /// Configuration shared by the upstream C builds.
 ///
@@ -156,7 +156,7 @@ pub const Config = struct {
             if (entry.depth() < min_depth) continue;
             if (!std.mem.endsWith(u8, entry.basename, ext)) continue;
             // Package paths use `/` on every host.
-            const rel = try std.mem.replaceOwned(u8, b.allocator, entry.path, std.fs.path.sep_str, "/");
+            const rel = try std.mem.replaceOwned(u8, b.allocator, entry.path, std.Io.Dir.path.sep_str, "/");
             try files.append(b.allocator, b.fmt("{s}/{s}", .{ dir, rel }));
         }
 
@@ -177,7 +177,7 @@ pub const Config = struct {
         const b = self.b;
         const root = try b.root.joinString(b.allocator, ".");
         const absolute = try std.Io.Dir.cwd().realPathFileAlloc(b.graph.io, root, b.allocator);
-        return std.fs.path.join(b.allocator, &.{ absolute, ".zig-cache", sub_path });
+        return std.Io.Dir.path.join(b.allocator, &.{ absolute, ".zig-cache", sub_path });
     }
 
     fn lessThan(_: void, lhs: []const u8, rhs: []const u8) bool {

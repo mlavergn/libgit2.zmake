@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_timed_socket);
+const log = std.log.scoped(.libgit2_timed_socket);
 
 /// A connected TCP stream's reader and writer, with a deadline on every read
 /// and write.
@@ -14,7 +14,7 @@ pub const TimedSocket = struct {
 
     /// The I/O implementation every operation runs on.
     io: std.Io,
-    /// The connected stream; closed by `close`.
+    /// The connected stream; closed by `deinit`.
     stream: std.Io.net.Stream,
     /// The deadline for each read and each write.
     timeout: std.Io.Timeout,

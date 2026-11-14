@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_libgit2);
+const log = std.log.scoped(.libgit2_libgit2);
 const mod = @import("module.zig");
 
 /// libgit2's global state, plus the Zig TLS stream that gives it HTTPS.

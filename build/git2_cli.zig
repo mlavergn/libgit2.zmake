@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_build_git2_cli);
+const log = std.log.scoped(.libgit2_build_git2_cli);
 const mod = @import("module.zig");
 
 /// `git2`, libgit2's own command-line client, built from the pinned sources.

@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_test_repo);
+const log = std.log.scoped(.libgit2_test_repo);
 const mod = @import("module.zig");
 
 /// A throwaway repository for the unit tests.
@@ -37,6 +37,7 @@ pub const TestRepo = struct {
     /// - `io`: the I/O implementation for files and TLS.
     /// - Returns: the fixture; propagates file-system and libgit2 failures.
     pub fn init(allocator: std.mem.Allocator, io: std.Io) !Self {
+        log.debug("{s}:{d} :: {s}", .{ @src().file, @src().line, @src().fn_name });
         var lib = try mod.Libgit2.init(allocator, io);
         errdefer lib.deinit();
 
@@ -68,9 +69,9 @@ pub const TestRepo = struct {
     /// - `contents`: the file's contents.
     /// - Returns: nothing; propagates file-system failures.
     pub fn writeFile(self: *Self, rel_path: []const u8, contents: []const u8) !void {
-        const sub_path = try std.fs.path.join(self.allocator, &.{ "repo", rel_path });
+        const sub_path = try std.Io.Dir.path.join(self.allocator, &.{ "repo", rel_path });
         defer self.allocator.free(sub_path);
-        if (std.fs.path.dirname(sub_path)) |dir| try self.tmp.dir.createDirPath(self.io, dir);
+        if (std.Io.Dir.path.dirname(sub_path)) |dir| try self.tmp.dir.createDirPath(self.io, dir);
         try self.tmp.dir.writeFile(self.io, .{ .sub_path = sub_path, .data = contents });
     }
 
@@ -123,7 +124,7 @@ pub const TestRepo = struct {
         var parents = [_]?*const mod.c.git_commit{if (parent) |p| p.handle else null};
         var id: mod.c.git_oid = .{};
         try mod.GitError.check(mod.c.git_commit_create(&id, repo, "HEAD", signature, signature, null, message_z, tree, @intFromBool(parent != null), &parents));
-        return mod.Oid.init(&id);
+        return mod.Oid.fromRaw(&id);
     }
 };
 

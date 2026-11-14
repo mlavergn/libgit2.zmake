@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_build_clar);
+const log = std.log.scoped(.libgit2_build_clar);
 const mod = @import("module.zig");
 
 /// libgit2's own clar test suites, built against the Zig-built library.
@@ -63,13 +63,14 @@ pub const Clar = struct {
     /// - `libgit2`: the libgit2 build; must outlive the value.
     /// - Returns: the clar builder; propagates path and allocation failures.
     pub fn init(cfg: *const mod.Config, libgit2: *const mod.LibGit2) !Self {
+        if (cfg.verbose) log.debug("{s}:{d} :: {s}", .{ @src().file, @src().line, @src().fn_name });
         const b = cfg.b;
         const generator = hostTool(b, "clar_generate");
 
         // Keyed by package hash, so a new pin gets a fresh copy.
-        const fixtures_path = try cfg.projectCachePath(b.fmt("ziglibgit2-clar-fixtures/{s}", .{libgit2.dep.builder.pkg_hash}));
+        const fixtures_path = try cfg.projectCachePath(b.fmt("libgit2-clar-fixtures/{s}", .{libgit2.dep.builder.pkg_hash}));
         const fixtures = b.addRunArtifact(hostTool(b, "clar_fixtures"));
-        fixtures.addDirectoryArg(libgit2.dep.path("tests/resources"));
+        fixtures.addDirectoryArg2(libgit2.dep.path("tests/resources"), .{});
         fixtures.addArg(fixtures_path);
         fixtures.addArgs(&executable_fixtures);
         // The output is outside the cache Zig manages; the tool's own stamp
@@ -102,10 +103,10 @@ pub const Clar = struct {
         // `add_custom_command(... generate.py -o <bin> -f ...)`.
         const generate = b.addRunArtifact(self.generator);
         generate.addArg("-o");
-        const suite_dir = generate.addOutputDirectoryArg("clar");
+        const suite_dir = generate.addOutputDirectoryArg2("clar", .{});
         generate.addArg("-f");
         for (excluded) |prefix| generate.addArg(b.fmt("-x{s}", .{prefix}));
-        generate.addDirectoryArg(dep.path(test_dir));
+        generate.addDirectoryArg2(dep.path(test_dir), .{});
 
         const root = cfg.createCModule();
         // `TEST_INCLUDES`, then `LIBGIT2_INCLUDES` and the dependency includes.

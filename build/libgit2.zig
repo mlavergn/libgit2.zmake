@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_build_libgit2);
+const log = std.log.scoped(.libgit2_build_libgit2);
 const mod = @import("module.zig");
 
 /// libgit2 1.9, built from its pinned release tarball with no CMake.

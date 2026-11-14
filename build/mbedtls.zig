@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_build_mbedtls);
+const log = std.log.scoped(.libgit2_build_mbedtls);
 const mod = @import("module.zig");
 
 /// mbedTLS 3.6, the crypto library libssh2 is built against.

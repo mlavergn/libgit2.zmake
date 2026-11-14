@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_reference);
+const log = std.log.scoped(.libgit2_reference);
 const mod = @import("module.zig");
 
 /// A git reference, such as a branch, tag, or `HEAD`.
@@ -52,7 +52,7 @@ pub const Reference = struct {
     pub fn target(self: *const Self) ?mod.Oid {
         const oid = mod.c.git_reference_target(self.handle);
         if (oid == null) return null;
-        return mod.Oid.init(oid);
+        return mod.Oid.fromRaw(oid);
     }
 };
 

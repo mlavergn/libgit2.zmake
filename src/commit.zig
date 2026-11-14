@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_commit);
+const log = std.log.scoped(.libgit2_commit);
 const mod = @import("module.zig");
 
 /// A commit object.
@@ -36,7 +36,7 @@ pub const Commit = struct {
     /// - `self`: the commit.
     /// - Returns: the id.
     pub fn id(self: *const Self) mod.Oid {
-        return mod.Oid.init(mod.c.git_commit_id(self.handle));
+        return mod.Oid.fromRaw(mod.c.git_commit_id(self.handle));
     }
 
     /// Returns the first paragraph of the message, on one line.

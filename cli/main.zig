@@ -1,6 +1,6 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_cli);
-const mod = @import("ziglibgit2");
+const log = std.log.scoped(.libgit2_cli);
+const mod = @import("libgit2");
 
 /// Log configuration for the executable: warnings only, so the trace lines
 /// of a debug build do not interleave with `git2`'s own output.

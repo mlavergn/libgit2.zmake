@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_build_libssh2);
+const log = std.log.scoped(.libgit2_build_libssh2);
 const mod = @import("module.zig");
 
 /// libssh2 1.11, libgit2's SSH transport, with mbedTLS as its crypto backend.

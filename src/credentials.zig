@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_credentials);
+const log = std.log.scoped(.libgit2_credentials);
 const mod = @import("module.zig");
 
 /// Supplies the passphrase for an encrypted SSH key, or null to skip the key.
@@ -53,6 +53,7 @@ pub const Credentials = struct {
     /// - `passphrase_context`: passed to `passphrase_fn`.
     /// - Returns: the credential source; call `deinit` to free it.
     pub fn init(allocator: std.mem.Allocator, io: std.Io, home: ?[]const u8, passphrase_fn: ?PassphraseFn, passphrase_context: ?*anyopaque) !Self {
+        log.debug("{s}:{d} :: {s}", .{ @src().file, @src().line, @src().fn_name });
         return Self{
             .arena = std.heap.ArenaAllocator.init(allocator),
             .io = io,
@@ -172,7 +173,7 @@ pub const Credentials = struct {
     ///   failures.
     fn keyCandidate(self: *Self, name: []const u8) !?struct { private: [:0]const u8, public: [*c]const u8, passphrase: [*c]const u8 } {
         const home = self.home orelse return null;
-        const private = try std.fmt.allocPrintSentinel(self.allocator, "{s}/.ssh/{s}", .{ home, name }, 0);
+        const private = try self.allocator.printSentinel("{s}/.ssh/{s}", .{ home, name }, 0);
         const contents = std.Io.Dir.cwd().readFileAlloc(self.io, private, self.allocator, .limited(64 * 1024)) catch |err| switch (err) {
             error.FileNotFound => return null,
             else => return err,
@@ -183,7 +184,7 @@ pub const Credentials = struct {
         std.crypto.secureZero(u8, contents);
 
         // libssh2 derives the public key when its file is absent.
-        const public_path = try std.fmt.allocPrintSentinel(self.allocator, "{s}.pub", .{private}, 0);
+        const public_path = try self.allocator.printSentinel("{s}.pub", .{private}, 0);
         const public: [*c]const u8 = if (std.Io.Dir.cwd().access(self.io, public_path, .{})) |_| public_path.ptr else |_| null;
 
         var passphrase: [*c]const u8 = null;
@@ -194,7 +195,7 @@ pub const Credentials = struct {
             if (value.len > room) return error.PassphraseTooLong;
             // Kept in `passphrase_buffer` only, which is zeroed once libgit2
             // has copied it, rather than in the arena.
-            std.mem.copyForwards(u8, self.passphrase_buffer[0..value.len], value);
+            @memmove(self.passphrase_buffer[0..value.len], value);
             self.passphrase_buffer[value.len] = 0;
             passphrase = &self.passphrase_buffer;
         }

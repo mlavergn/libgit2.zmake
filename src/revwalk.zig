@@ -1,5 +1,5 @@
 const std = @import("std");
-const log = std.log.scoped(.ziglibgit2_revwalk);
+const log = std.log.scoped(.libgit2_revwalk);
 const mod = @import("module.zig");
 
 /// The order a `Revwalk` returns commits in.
@@ -72,7 +72,7 @@ pub const Revwalk = struct {
         // The normal end of a walk, not a failure to report.
         if (code == mod.c.GIT_ITEROVER) return null;
         try mod.GitError.check(code);
-        return mod.Oid.init(&oid);
+        return mod.Oid.fromRaw(&oid);
     }
 };
 
